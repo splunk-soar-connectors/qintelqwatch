@@ -1,6 +1,18 @@
-# -----------------------------------------
-# Phantom App Connector python file
-# -----------------------------------------
+# File: qintelqwatch_connector.py
+#
+# Copyright (c) 2009-2021 Qintel, LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+#
 
 import json
 import os
@@ -13,7 +25,7 @@ from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 
 from qintel_helper import search_qwatch
-from qintelqwatch_consts import USER_AGENT
+from qintelqwatch_consts import *
 
 
 class QWatchConnector(BaseConnector):
@@ -29,28 +41,41 @@ class QWatchConnector(BaseConnector):
         self.client_id = None
         self.client_secret = None
 
+    def _validate_integer(self, parameter, key):
+        """
+        Validate an integer.
+
+        :param action_result: Action result or BaseConnector object
+        :param parameter: input parameter
+        :param key: input parameter message key
+        :return: status phantom.APP_ERROR/phantom.APP_SUCCESS, integer value of the parameter or None in case of failure
+        """
+        if parameter is not None:
+            try:
+                if not float(parameter).is_integer():
+                    return self.set_status(phantom.APP_ERROR, VALID_INT_MSG.format(param=key)), None
+
+                parameter = int(parameter)
+            except:
+                return self.set_status(phantom.APP_ERROR, VALID_INT_MSG.format(param=key)), None
+
+            if parameter < 0:
+                return self.set_status(phantom.APP_ERROR, NON_NEG_INT_MSG.format(param=key)), None
+
+        return phantom.APP_SUCCESS, parameter
+
     def _handle_test_connectivity(self):
 
+        action_result = self.add_action_result(ActionResult())
         try:
             res = search_qwatch(None, None, 'ping', **self.client_args)
-            self.debug_print('qwatch test connectivity return: ', res)
+            self.debug_print(f'qwatch test connectivity return: {res}')
         except Exception as e:
-            self.debug_print('qwatch test connectivity error: ', e)
-            self.set_status(phantom.APP_ERROR,
-                            'QWatch Connectivity Test Failed ', e)
-            return self.get_status()
+            return action_result.set_status(phantom.APP_ERROR,
+                            f'Test Connectivity Failed {str(e)}')
 
-        return self.set_status_save_progress(phantom.APP_SUCCESS,
-                                             'Test Connectivity Successful')
-
-    def _init_handler(self, param, field):
-
-        self.save_progress("In action handler for: {0}"
-                           .format(self.get_action_identifier()))
-
-        action_result = self.add_action_result(ActionResult(dict(param)))
-
-        return param.get(field), action_result
+        self.save_progress("Test Connectivity Passed")
+        return action_result.set_status(phantom.APP_SUCCESS)
 
     def _qwatch_query(self, search_term, search_type, query_type, search_args):
 
@@ -65,7 +90,7 @@ class QWatchConnector(BaseConnector):
                 **kwargs
             )
         except Exception as e:
-            self.debug_print('qwatch lookup failed: ', e)
+            self.debug_print(f'qwatch lookup failed: {str(e)}')
             raise Exception(str(e))
 
     def _make_qwatch_times(self, params):
@@ -230,6 +255,10 @@ class QWatchConnector(BaseConnector):
 
     def _handle_qwatch_search(self, param):
 
+        self.save_progress("In action handler for: {0}"
+                           .format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
         search_type = None
 
         if param.get('email'):
@@ -239,9 +268,9 @@ class QWatchConnector(BaseConnector):
             search_type = 'domain'
 
         if not search_type:
-            raise Exception('action failed: email OR domain required')
+            return action_result.set_status(phantom.APP_ERROR, "Please provide either 'email' or 'domain' parameter")
 
-        search_term, action_result = self._init_handler(param, search_type)
+        search_term = param.get(search_type)
 
         search_args = {
             'params': {
@@ -262,14 +291,13 @@ class QWatchConnector(BaseConnector):
 
         exposures = results.get('data', [])
 
-        if len(exposures) == 0:
-            summary = action_result.update_summary({})
-            summary['exposure_count'] = 0
-            return action_result.set_status(phantom.APP_SUCCESS)
-
-        for r in exposures:
-            return_data = self._process_qwatch_exposure(r)
-            action_result.add_data(return_data)
+        try:
+            for r in exposures:
+                return_data = self._process_qwatch_exposure(r)
+                action_result.add_data(return_data)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR,
+                "Error occurred while processing the response from server {}".format(str(e)))
 
         summary = action_result.update_summary({})
         summary['exposure_count'] = len(exposures)
@@ -280,16 +308,14 @@ class QWatchConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        search_args = {
-            'params': self._make_qwatch_params(param)
-        }
-
         try:
+            search_args = {
+                'params': self._make_qwatch_params(param)
+            }
             data = self._qwatch_query(None, None, 'exposures', search_args)
+            self._process_exposures_ingest(data)
         except Exception as e:
             return action_result.set_status(phantom.APP_ERROR, str(e))
-
-        self._process_exposures_ingest(data)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -319,18 +345,41 @@ class QWatchConnector(BaseConnector):
         # that needs to be accessed across actions
         self._state = self.load_state()
 
+        if not isinstance(self._state, dict):
+            self.debug_print("Resetting the state file with the default format")
+            self._state = {
+                "app_version": self.get_app_json().get('app_version')
+            }
+            return self.set_status(phantom.APP_ERROR, QINTELQWATCH_STATE_FILE_CORRUPT_ERR)
+
         # get the asset config
         config = self.get_config()
+        self._proxies = {}
+        env_vars = config.get('_reserved_environment_variables', {})
+        if 'HTTP_PROXY' in env_vars:
+            self._proxies['http'] = env_vars['HTTP_PROXY']['value']
+        elif 'HTTP_PROXY' in os.environ:
+            self._proxies['http'] = os.environ.get('HTTP_PROXY')
 
-        self.qwatch_initial_window = int(config['qwatch_initial_window'])
-        self.plaintext_passwords = config['qwatch_fetch_password']
+        if 'HTTPS_PROXY' in env_vars:
+            self._proxies['https'] = env_vars['HTTPS_PROXY']['value']
+        elif 'HTTPS_PROXY' in os.environ:
+            self._proxies['https'] = os.environ.get('HTTPS_PROXY')
+        ret_val, self.qwatch_initial_window = self._validate_integer(
+                config.get('qwatch_initial_window', 6), 'qwatch_initial_window'
+            )
+        if phantom.is_fail(ret_val):
+            return self.get_status()
+
+        self.plaintext_passwords = config.get('qwatch_fetch_password')
 
         self.client_args = {
             'remote': config.get('remote'),
             'client_id': config['client_id'],
             'client_secret': config['client_secret'],
             'user_agent': USER_AGENT,
-            'logger': self.debug_print
+            'logger': self.debug_print,
+            'proxies': self._proxies
         }
 
         return phantom.APP_SUCCESS

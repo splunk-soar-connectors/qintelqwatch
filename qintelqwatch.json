@@ -1,60 +1,56 @@
 {
     "appid": "4721199b-6820-4ecd-bc84-23cabbe506b3",
     "name": "Qintel QWatch",
-    "description": "This app retrieves exposed credential alerts from Qintel’s QWatch platform",
+    "description": "This app retrieves exposed credential alerts from Qintel's QWatch platform",
     "type": "investigative",
     "product_vendor": "Qintel",
-    "logo": "qintelqwatch.png",
-    "logo_dark": "qintelqwatch_dark.png",
+    "logo": "logo_qintelqwatch.svg",
+    "logo_dark": "logo_qintelqwatch_dark.svg",
     "product_name": "Qintel QWatch",
     "product_version_regex": ".*",
     "publisher": "Qintel, LLC",
-    "license": "Apache 2.0",
+    "license": "Copyright (c) 2009-2021 Qintel, LLC",
     "app_version": "1.0.0",
     "utctime_updated": "2021-11-16T14:25:46.922845Z",
     "package_name": "phantom_qintelqwatch",
     "main_module": "qintelqwatch_connector.py",
-    "min_phantom_version": "4.6.19142",
+    "min_phantom_version": "5.0.0",
     "app_wizard_version": "1.0.0",
     "python_version": "3",
+    "fips_compliant": true,
     "configuration": {
         "client_id": {
             "description": "Client ID",
             "data_type": "string",
             "required": true,
-            "default": "",
-            "order": 1
+            "order": 0
         },
         "client_secret": {
             "description": "Client Secret",
             "data_type": "password",
             "required": true,
-            "order": 2
+            "order": 1
         },
         "remote": {
             "description": "QWatch API URL (Optional)",
             "data_type": "string",
-            "required": false,
             "default": "https://api.qwatch.qintel.com",
-            "order": 3
+            "order": 2
         },
         "ph2": {
             "data_type": "ph",
-            "order": 4
+            "order": 3
         },
         "qwatch_fetch_password": {
-            "data_type": "boolean",
             "description": "Fetch plaintext passwords",
-            "order": 5,
-            "required": false,
-            "default": 1
+            "data_type": "boolean",
+            "order": 4
         },
         "qwatch_initial_window": {
-            "data_type": "numeric",
             "description": "QWatch Initial Ingestion Window (Days)",
-            "order": 9,
-            "required": false,
-            "default": 6
+            "data_type": "numeric",
+            "default": 6,
+            "order": 5
         }
     },
     "actions": [
@@ -62,7 +58,6 @@
             "action": "test connectivity",
             "identifier": "test_connectivity",
             "description": "Validate the asset configuration for connectivity using supplied configuration",
-            "verbose": "",
             "type": "test",
             "read_only": true,
             "parameters": {},
@@ -78,25 +73,23 @@
             "parameters": {
                 "start_time": {
                     "data_type": "numeric",
-                    "order": 1,
-                    "description": "Start of time range, in epoch time (milliseconds)",
-                    "verbose": "If not specified, the default is past 10 days"
+                    "order": 0,
+                    "description": "Start of time range, in epoch time (milliseconds)"
                 },
                 "end_time": {
                     "data_type": "numeric",
-                    "order": 2,
-                    "description": "End of time range, in epoch time (milliseconds)",
-                    "verbose": "If not specified, the default is now"
+                    "order": 1,
+                    "description": "End of time range, in epoch time (milliseconds)"
                 },
                 "container_count": {
                     "data_type": "numeric",
-                    "order": 3,
-                    "description": "Maximum number of container records to query for."
+                    "order": 2,
+                    "description": "Maximum number of container records to query for"
                 },
                 "artifact_count": {
                     "data_type": "numeric",
-                    "order": 4,
-                    "description": "Maximum number of artifact records to query for."
+                    "order": 3,
+                    "description": "Maximum number of artifact records to query for"
                 }
             },
             "output": [],
@@ -106,33 +99,27 @@
             "action": "search qwatch exposures",
             "identifier": "qwatch_search_exposures",
             "description": "Queries QWatch for credential exposures",
-            "verbose": "",
             "type": "investigate",
             "read_only": true,
             "parameters": {
                 "email": {
                     "description": "Email to query",
                     "data_type": "string",
-                    "required": false,
                     "primary": true,
                     "contains": [
-                        "qwatch credential", "email"
+                        "qwatch credential",
+                        "email"
                     ],
-                    "value_list": [],
-                    "default": false,
                     "order": 0
                 },
                 "domain": {
                     "description": "Domain to query",
                     "data_type": "string",
-                    "required": false,
                     "primary": true,
                     "contains": [
-                        "qwatch domain", "domain"
+                        "domain"
                     ],
-                    "value_list": [],
-                    "default": false,
-                    "order": 0
+                    "order": 1
                 }
             },
             "render": {
@@ -140,6 +127,64 @@
                 "title": "Exposures"
             },
             "output": [
+                {
+                    "data_path": "action_result.parameter.domain",
+                    "data_type": "string",
+                    "contains": [
+                        "domain"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.email",
+                    "data_type": "string",
+                    "contains": [
+                        "qwatch credential",
+                        "email"
+                    ]
+                },
+                {
+                    "column_name": "Credential",
+                    "data_path": "action_result.data.*.credential",
+                    "data_type": "string",
+                    "column_order": 0,
+                    "contains": [
+                        "qwatch credential",
+                        "email"
+                    ],
+                    "example_values": [
+                        "info@example.local"
+                    ]
+                },
+                {
+                    "column_name": "First Seen",
+                    "data_path": "action_result.data.*.first_seen",
+                    "data_type": "string",
+                    "column_order": 4
+                },
+                {
+                    "column_name": "Last Seen",
+                    "data_path": "action_result.data.*.last_seen",
+                    "data_type": "string",
+                    "column_order": 3
+                },
+                {
+                    "column_name": "Password",
+                    "data_path": "action_result.data.*.password",
+                    "data_type": "password",
+                    "column_order": 1,
+                    "contains": [
+                        "qwatch password"
+                    ]
+                },
+                {
+                    "column_name": "Source Name",
+                    "data_path": "action_result.data.*.source_name",
+                    "data_type": "string",
+                    "column_order": 2,
+                    "contains": [
+                        "qwatch source name"
+                    ]
+                },
                 {
                     "data_path": "action_result.status",
                     "data_type": "string",
@@ -154,49 +199,26 @@
                     "data_type": "numeric"
                 },
                 {
-                    "column_name": "Credential",
-                    "data_path": "action_result.data.*.credential",
-                    "data_type": "string",
-                    "column_order": 0,
-                    "contains": [
-                        "qwatch credential", "email"
-                    ],
+                    "data_path": "action_result.summary",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
                     "example_values": [
-                        "info@example.local"
+                        1
                     ]
                 },
                 {
-                    "column_name": "Password",
-                    "data_path": "action_result.data.*.password",
-                    "data_type": "password",
-                    "column_order": 1,
-                    "contains": [
-                        "qwatch password"
-                    ],
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
                     "example_values": [
-                        "abc123"
+                        1
                     ]
-                },
-                {
-                    "column_name": "Source Name",
-                    "data_path": "action_result.data.*.source_name",
-                    "data_type": "string",
-                    "column_order": 2,
-                    "contains": [
-                        "qwatch source name"
-                    ]
-                },
-                {
-                    "column_name": "Last Seen",
-                    "data_path": "action_result.data.*.last_seen",
-                    "data_type": "string",
-                    "column_order": 3
-                },
-                {
-                    "column_name": "First Seen",
-                    "data_path": "action_result.data.*.first_seen",
-                    "data_type": "string",
-                    "column_order": 4
                 }
             ],
             "versions": "EQ(*)"
