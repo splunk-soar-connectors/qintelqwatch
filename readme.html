@@ -1,0 +1,50 @@
+<html>
+    <body>
+        <h1>Qintel QWatch App for Splunk SOAR</h1>
+        <h2>Description</h2>
+        <p>
+            Qintel's QWatch system contains credentials obtained from dump sites, hacker collaboratives, and command
+            and control infrastructures of eCrime- and APT-related malware. With this integration, users can fetch
+            exposure alerts as events and discover exposed credentials associated with their organization.
+            <br><br>
+
+            For more information, existing customers can visit our
+            <a target="_blank" href="https://docs.qintel.com/integrations/overview">Integrations Documentation</a>
+            <br>
+        </p>
+        <h2>Actions</h2>
+        <h3>search qwatch exposures</h3>
+        <p>
+            Queries QWatch for credential exposures by email or domain. Returns a list of exposures containing the
+            following elements:
+            <ul>
+                <li>Username</li>
+                <li>Plaintext Password (optional)</li>
+                <li>Exposure Source Name</li>
+                <li>Credential First Seen Timestamp</li>
+                <li>Credential Last Seen Timestamp</li>
+            </ul>
+        </p>
+        <h3>on poll</h3>
+        <p>
+            Generates events and artifacts from QWatch exposure alerts. Each artifact is created with the
+            following elements:
+            <ul>
+                <li>Username</li>
+                <li>Plaintext Password (optional)</li>
+                <li>Username First Seen Timestamp</li>
+                <li>Username Last Seen Timestamp</li>
+                <li>Credential First Seen Timestamp</li>
+                <li>Credential Last Seen Timestamp</li>
+            </ul>
+        </p>
+        <h3>test connectivity</h3>
+        <p>Test connectivity to the QWatch API</p>
+
+        <h2>Contact Information</h2>
+        <p>
+            <i>Sales:</i> contactus@qintel.com<br>
+            <i>Support:</i> integrations-support@qintel.com
+        </p>
+    </body>
+</html>
