@@ -24,8 +24,8 @@ import phantom.app as phantom
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 
-from qintel_helper import search_qwatch
 from qintelqwatch_consts import *
+from qintelqwatch_helper import search_qwatch
 
 
 class QWatchConnector(BaseConnector):
