@@ -125,8 +125,7 @@ def _set_headers(**kwargs):
     headers = deepcopy(DEFAULT_HEADERS)
 
     if kwargs.get('user_agent'):
-        headers['User-Agent'] = \
-            f"{kwargs['user_agent']}/{USER_AGENT}/{VERSION}"
+        headers['User-Agent'] = f"{kwargs['user_agent']}/{USER_AGENT}/{VERSION}"
 
     # TODO: deprecate
     if kwargs.get('client_id') or kwargs.get('client_secret'):

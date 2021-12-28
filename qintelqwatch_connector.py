@@ -94,7 +94,12 @@ class QWatchConnector(BaseConnector):
             raise Exception(str(e))
 
     def _make_qwatch_times(self, params):
+        """
+        Calculate the start_time and end_time for the current poll.
 
+        :param params: input action parameters
+        :return: start_time and end_time
+        """
         # stored - start time
         start_time = self._state.get('last_poll')
         if start_time:
@@ -116,8 +121,7 @@ class QWatchConnector(BaseConnector):
                     'parameter must be between 1 and 90'
                 )
 
-            start_time = datetime.utcnow() - \
-                         timedelta(days=self.qwatch_initial_window)
+            start_time = datetime.utcnow() - timedelta(days=self.qwatch_initial_window)
             start_time = int(start_time.timestamp())
 
         end_time = params.get('end_time')
@@ -201,7 +205,12 @@ class QWatchConnector(BaseConnector):
         return 'medium'
 
     def _process_exposures_ingest(self, data):
+        """
+        Process and ingest the received exposures.
 
+        :param data: response data
+        :return: None
+        """
         total_creds = data['meta']['total']
         self.save_progress(f'Processing {total_creds} exposures')
 
@@ -248,15 +257,14 @@ class QWatchConnector(BaseConnector):
         if status == phantom.APP_ERROR:
             raise Exception(f'Container creation failed: {msg}')
 
-        # save poll time
+        # save poll time to avoid duplicate polling
         self._state['last_poll'] = sorted(loaded_ts)[-1]
 
         self.save_progress(f'Processed {total_creds} exposures')
 
     def _handle_qwatch_search(self, param):
 
-        self.save_progress("In action handler for: {0}"
-                           .format(self.get_action_identifier()))
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         search_type = None
@@ -352,7 +360,6 @@ class QWatchConnector(BaseConnector):
             }
             return self.set_status(phantom.APP_ERROR, QINTELQWATCH_STATE_FILE_CORRUPT_ERR)
 
-        # get the asset config
         config = self.get_config()
         self._proxies = {}
         env_vars = config.get('_reserved_environment_variables', {})
