@@ -1,6 +1,6 @@
 # File: qintelqwatch_consts.py
 #
-# Copyright (c) 2009-2021 Qintel, LLC
+# Copyright (c) 2009-2025 Qintel, LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 #
-VERSION = '1.0.0'
-USER_AGENT = 'Splunk-SOAR-'
+VERSION = "1.0.0"
+USER_AGENT = "Splunk-SOAR-"
 USER_AGENT += VERSION
 QINTELQWATCH_STATE_FILE_CORRUPT_ERR = "Error occurred while loading the state file due to its unexpected format.\
      Resetting the state file with the default format. Please try again."
